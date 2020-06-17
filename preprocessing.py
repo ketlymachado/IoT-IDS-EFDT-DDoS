@@ -1,0 +1,56 @@
+#########################################################################
+#                                                                       #
+# Project           : Network Intrusion Detection System for IoT        #
+#                                                                       #
+# Program name      : preprocessing.py                                  #
+#                                                                       #
+# Authors           : Gustavo Vitral Arbex, Kétly Gonçalves Machado,    #
+#                     Daniel Macêdo Batista, Roberto Hirata Junior      #
+#                                                                       #
+# Date created      : 20200617                                          #
+#                                                                       #
+# Purpose           : Preprocesses the data from BoT-IoT dataset and    #
+#                     generates 2 .csv files containing normal and DDoS #
+#                     attack traffic instances.                         #
+#                                                                       #
+#########################################################################
+
+import csv
+
+# Generates a .csv file containing all the normal traffic instances in the BoT-IoT dataset
+
+with open('UNSW_2018_IoT_Botnet_Dataset_Feature_Names.csv') as f:
+    with open('botiot-preprocessed-normal.csv', 'w') as n:
+        n.write(f.read() + "\n")
+
+with open('botiot-preprocessed-normal.csv', 'a', newline='') as n:
+
+    spamwriter = csv.writer(n, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+    for i in range(1, 75):
+        with open('UNSW_2018_IoT_Botnet_Dataset_' + str(i) + '.csv') as d:
+
+            csv_reader = csv.reader(d, delimiter=',')
+
+            for row in csv_reader:
+                if row[33] == 'Normal':
+                    spamwriter.writerow(row)
+
+# Generates a .csv file containing all the DDoS attack traffic instances in the BoT-IoT dataset
+
+with open('UNSW_2018_IoT_Botnet_Dataset_Feature_Names.csv') as f:
+    with open('botiot-preprocessed.csv', 'w') as a:
+        a.write(f.read() + "\n")
+
+with open('botiot-preprocessed.csv', 'a', newline='') as a:
+
+    spamwriter = csv.writer(a, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+    for i in range(1, 75):
+        with open('UNSW_2018_IoT_Botnet_Dataset_' + str(i) + '.csv') as d:
+
+            csv_reader = csv.reader(d, delimiter=',')
+
+            for row in csv_reader:
+                if row[33] == 'DDoS':
+                    spamwriter.writerow(row)
