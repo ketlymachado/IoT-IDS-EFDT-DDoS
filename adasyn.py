@@ -7,14 +7,14 @@
 # Authors           : Gustavo Vitral Arbex, Kétly Gonçalves Machado,    #
 #                     Daniel Macêdo Batista, Roberto Hirata Junior      #
 #                                                                       #
-# Date created      : 20200617                                          #
-#                                                                       #
-# Purpose           : Uses the ADASYN sampling technique to equal the   #
+# Purpose           : Uses the ADASYN sampling technique to balance the #
 #                     number of normal and attack instances.            #
 #                                                                       #
 #                     Some features were removed from the data in order #
-#                     to perform the ADASYN method. This removal is     #
-#                     explained in the paper.                           #
+#                     to perform the ADASYN method.                     #
+#                                                                       #
+#                     After applying the ADASYN technique, it generates #
+#                     a new .csv file with the resampled data.          #
 #                                                                       #
 #########################################################################
 
@@ -25,7 +25,7 @@ import seaborn as sns
 from imblearn.over_sampling import ADASYN
 from collections import Counter
 
-data = pd.read_csv('bot-iot.csv')
+data = pd.read_csv('botiot.csv')
 
 cols = ['pkSeqID','stime','flgs','proto','saddr','sport','daddr','dport','pkts','bytes','state','ltime',
         'seq','dur','mean','stddev','smac','dmac','sum','min','max','soui','doui','sco','dco','spkts',
@@ -33,33 +33,48 @@ cols = ['pkSeqID','stime','flgs','proto','saddr','sport','daddr','dport','pkts',
 
 data.columns = cols
 
-# Checking data types
+print("\nChecking data types...\n")
+data.info()
 
-#data.info()
+print("\nChecking for NaN values in the data...\n")
+count_nan_in_df = data.isnull().sum()
+print (count_nan_in_df)
 
-#print(data.head)
+print("\nRemoving categorical features and features with NaN values from the data...\n")
+botiot = data.drop(['flgs','proto','saddr','sport','daddr','dport','state','smac','dmac',
+                    'soui','doui','sco','dco','category','subcategory'], axis=1)
 
-#print(data['attack'].value_counts())
-
-# Checking NaN values in the data
-
-#count_nan_in_df = data.isnull().sum()
-#print (count_nan_in_df)
-
-# Removing features from the data
-botiot = data.drop(['pkSeqID','stime','flgs','proto','saddr','sport','daddr','dport','state','smac','dmac','soui','doui','sco','dco','category','subcategory'], axis=1)
-
-# Dataframe to Numpy Arrays
+print("Turning Dataframe to Numpy Arrays...\n")
+# All columns except the last
 X = botiot.iloc[:,:-1].values
+# Only the last column
 y = botiot.iloc[:,-1].values
 
-#print('Shape of Feature Matrix: ', X.shape)
-#print('Shape of Target Vector: ', y.shape)
+print(f"Shape of Feature Matrix: {X.shape}")
+print(f"Shape of Target Vector: {y.shape}")
 
-print('Original Target Variable Distribution: ', Counter(y))
+print()
+print(f"Original Target Variable Distribution: {Counter(y)}")
 
-ada = ADASYN(sampling_strategy = 'minority', n_neighbors = 5)
+adasyn = ADASYN(sampling_strategy = 'minority', n_neighbors = 5)
 
-X_res, y_res = ada.fit_sample(X, y)
+print("\nResampling the data...\n")
+X_res, y_res = adasyn.fit_resample(X, y)
 
-print('Oversampled Target Variable Distribution: ', Counter(y_res))
+print(f"Resampled Target Variable Distribution: {Counter(y_res)}")
+
+print("\nTurning Numpy Arrays to Dataframe...\n")
+
+cols = ['pkSeqID','stime','pkts','bytes','ltime','seq','dur','mean','stddev','sum','min',
+        'max','spkts','dpkts','sbytes','dbytes','rate','srate','drate']
+
+botiot = pd.DataFrame(X_res, columns=cols)
+
+botiot['attack'] = y_res
+
+print("Shuffling the data rows...\n")
+botiot = botiot.sample(frac=1)
+
+botiot.to_csv('botiot-adasyn.csv', index = False)
+
+print("Resampled dataset stored in botiot-adasyn.csv.")
